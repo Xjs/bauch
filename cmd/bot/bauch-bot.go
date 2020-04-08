@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"time"
 
@@ -12,7 +13,10 @@ import (
 func main() {
 	var token string
 	var apiURL string = "https://api.telegram.org"
-	var bauchResultURL string = "https://ganesha.aoide.de/bauch/bauch.jpeg"
+	var bauchResultURL string
+	bauchResultURL = "https://ganesha.aoide.de/bauch/bauch.jpg"
+	// bauchResultURL = "https://tbot.xyz/bold.jpg"
+	// bauchResultURL = "https://ganesha.aoide.de/money.jpg"
 	var timeout time.Duration
 
 	flag.StringVar(&token, "token", token, "Telegram API token")
@@ -37,35 +41,31 @@ func main() {
 	})
 
 	bot.Handle(telebot.OnQuery, func(q *telebot.Query) {
-		bauchResult := bauch.Say(q.Text)
-
-		result := &telebot.PhotoResult{
-			URL:         bauchResultURL,
-			ThumbURL:    bauchResultURL,
-			Width:       50,
-			Height:      50,
-			Title:       bauchResult,
-			Description: bauchResult,
-			Caption:     bauchResult,
+		var title, description string
+		if q.Text == "" {
+			q.Text = "Hallo"
+			title = bauch.Say("Hallo") + " " + bauch.Smile
+			description = bauch.Say("Enter a message to convert to Bauch form")
 		}
 
-		result.SetContent(&telebot.InputTextMessageContent{Text: bauchResult})
+		bauchResult := bauch.Say(q.Text) + " " + bauch.Smile
+
+		if description == "" {
+			title = bauch.Say("Send message:")
+			description = bauchResult
+		}
+
+		result := &telebot.ArticleResult{
+			ThumbURL:    bauchResultURL,
+			Title:       title,
+			Description: description,
+		}
+
+		result.SetContent(&telebot.InputTextMessageContent{Text: bauchResult, ParseMode: "Markdown"})
 		result.SetResultID("42")
 
-		results := make(telebot.Results, 1)
-		results[0] = result
-
-		// Trying to debug why the above result is not shown:
-		// result2 := &telebot.LocationResult{
-		// 	Location: telebot.Location{Lat: 42.0, Lng: 9.0},
-		// 	Title:    bauchResult,
-		// }
-		// result2.SetResultID("42")
-		// result2.SetContent(&telebot.InputTextMessageContent{Text: bauchResult})
-		// results[1] = result2
-
 		err := bot.Answer(q, &telebot.QueryResponse{
-			Results:   results,
+			Results:   telebot.Results{result},
 			CacheTime: 60,
 		})
 
@@ -75,6 +75,8 @@ func main() {
 			log.Printf("error answering inline query: %v\n", err)
 		}
 	})
+
+	fmt.Println(bauch.Say("running ") + bauch.Smile)
 
 	bot.Start()
 }
