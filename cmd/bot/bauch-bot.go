@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/Xjs/bauch"
-	"gopkg.in/tucnak/telebot.v2"
+	"gopkg.in/telebot.v3"
 )
 
 func main() {
@@ -25,6 +25,10 @@ func main() {
 
 	flag.Parse()
 
+	if token == "" {
+		log.Fatal(bauch.Say("I need a token"))
+	}
+
 	bot, err := telebot.NewBot(telebot.Settings{
 		Token:  token,
 		URL:    apiURL,
@@ -34,21 +38,20 @@ func main() {
 		log.Fatalf("Error initialising bot: %v\n", err)
 	}
 
-	bot.Handle("/start", func(m *telebot.Message) {
-		if _, err := bot.Send(m.Sender, bauch.Say("hello world")); err != nil {
-			log.Printf("error sending response to %v: %v\n", m.Sender, err)
-		}
+	bot.Handle("/start", func(c telebot.Context) error {
+		return c.Send(bauch.Say("hello world"))
 	})
 
-	bot.Handle(telebot.OnQuery, func(q *telebot.Query) {
+	bot.Handle(telebot.OnQuery, func(c telebot.Context) error {
 		var title, description string
-		if q.Text == "" {
-			q.Text = "Hallo"
+		text := c.Query().Text
+		if text == "" {
+			text = "Hallo"
 			title = bauch.Say("Hallo") + " " + bauch.Smile
 			description = bauch.Say("Enter a message to convert to Bauch form")
 		}
 
-		bauchResult := bauch.Say(q.Text) + " " + bauch.Smile
+		bauchResult := bauch.Say(text) + " " + bauch.Smile
 
 		if description == "" {
 			title = bauch.Say("Send message:")
@@ -64,8 +67,8 @@ func main() {
 		result.SetContent(&telebot.InputTextMessageContent{Text: bauchResult, ParseMode: "Markdown"})
 		result.SetResultID("42")
 
-		err := bot.Answer(q, &telebot.QueryResponse{
-			Results:   telebot.Results{result},
+		err := c.Answer(&telebot.QueryResponse{
+			Results:   []telebot.Result{result},
 			CacheTime: 60,
 		})
 
@@ -74,6 +77,7 @@ func main() {
 		if err != nil {
 			log.Printf("error answering inline query: %v\n", err)
 		}
+		return err
 	})
 
 	fmt.Println(bauch.Say("running ") + bauch.Smile)

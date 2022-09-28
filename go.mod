@@ -1,5 +1,8 @@
 module github.com/Xjs/bauch
 
-go 1.14
+go 1.19
 
-require gopkg.in/tucnak/telebot.v2 v2.0.0-20200329125927-3458aeb2e7be
+require (
+	github.com/pkg/errors v0.9.1 // indirect
+	gopkg.in/telebot.v3 v3.0.0 // indirect
+)
